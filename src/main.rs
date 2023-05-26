@@ -4,6 +4,7 @@ use std::process::Command;
 
 struct Compiler {
     ifoffsets: Vec<i32>,
+    whileoffsets: Vec<i32>,
     assembly: String,
 }
 impl Compiler {
@@ -81,6 +82,14 @@ impl Compiler {
             self.assembly.push_str("    cmp rax, rbx\n");
             self.assembly.push_str("    cmove rcx, rdi\n");
             self.assembly.push_str("    push rcx\n");
+        } else if token == "<" {
+            self.assembly.push_str("    pop rbx\n");
+            self.assembly.push_str("    pop rax\n");
+            self.assembly.push_str("    mov rdi, 1\n");
+            self.assembly.push_str("    mov rcx, 0\n");
+            self.assembly.push_str("    cmp rax, rbx\n");
+            self.assembly.push_str("    cmovl rcx, rdi\n");
+            self.assembly.push_str("    push rcx\n");
         }else if token == "." {
             self.assembly.push_str("    pop rdi\n");
             self.assembly.push_str("    call dump\n");
@@ -109,6 +118,26 @@ impl Compiler {
             self.assembly.push_str(&format!("label{:0width$}:\n", lastifoffset, width = 10));
 
 
+        }else if token == "while" {
+            let currentoffset = self.assembly.len() - 1;
+            self.whileoffsets.push(currentoffset as i32);
+
+            self.assembly.push_str(&format!("whilestart{:0width$}:\n", currentoffset, width = 10));
+            self.assembly.push_str("    pop rax\n");
+            self.assembly.push_str("    cmp rax, 1\n");
+
+            self.assembly.push_str("    jne ");
+
+            self.assembly.push_str(&format!("whileend{:0width$}\n", currentoffset, width = 10));
+ 
+
+        }else if token == "whileend" {
+            let lastifoffset =  self.whileoffsets.pop().expect("dont do end without if");
+
+            self.assembly.push_str(&format!("    jmp whilestart{:0width$}\n", lastifoffset, width=10));
+            self.assembly.push_str(&format!("whileend{:0width$}:\n", lastifoffset, width = 10));
+
+
         }else {
             self.assembly.push_str(&format!("    push {token}\n")); 
         }
@@ -117,6 +146,7 @@ impl Compiler {
 fn main() {
     let mut compiler = Compiler {
         ifoffsets: Vec::new(),
+        whileoffsets: Vec::new(),
         assembly: String::new(),
     };
 
