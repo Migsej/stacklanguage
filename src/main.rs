@@ -3,10 +3,10 @@ use std::env;
 use std::process::Command;
 
 struct Compiler {
-    ifoffsets: Vec<i32>,
-    whileoffsets: Vec<i32>,
+    ifoffsets: Vec<String>,
     assembly: String,
 }
+
 impl Compiler {
 
     fn parsefile(&mut self, file: String) -> &String{
@@ -99,12 +99,21 @@ impl Compiler {
 
             self.assembly.push_str("    jne ");
             let currentoffset = self.assembly.len() - 1;
-            self.ifoffsets.push(currentoffset as i32);
+            let currentlabel = format!("label{}", currentoffset);
 
-            self.assembly.push_str(&format!("label{:0width$}\n", currentoffset, width = 10));
+            self.assembly.push_str(&currentlabel);
+            self.assembly.push_str("\n");
+            self.ifoffsets.push(currentlabel);
         }else if token == "end" {
             let lastifoffset =  self.ifoffsets.pop().expect("dont do end without if");
-            self.assembly.push_str(&format!("label{:0width$}:\n", lastifoffset, width = 10));
+            if lastifoffset.starts_with("while") {
+                let lastifoffset = lastifoffset.replace("while", "");
+                self.assembly.push_str(&format!("    jmp whilestart{}\n", lastifoffset));
+                self.assembly.push_str(&format!("whileend{}:\n", lastifoffset));
+            }else{
+
+                self.assembly.push_str(&format!("{}:\n", lastifoffset));
+            }
 
 
         }else if token == "else" {
@@ -112,27 +121,36 @@ impl Compiler {
 
             self.assembly.push_str("    jmp ");
             let currentoffset = self.assembly.len() - 1;
-            self.ifoffsets.push(currentoffset as i32);
-            self.assembly.push_str(&format!("label{:0width$}\n", currentoffset, width = 10));
+            let currentlabel = format!("label{}", currentoffset);
+            self.assembly.push_str(&currentlabel);
+            self.assembly.push_str("\n");
 
-            self.assembly.push_str(&format!("label{:0width$}:\n", lastifoffset, width = 10));
+            self.assembly.push_str(&lastifoffset);
+            self.assembly.push_str(":\n");
+            self.ifoffsets.push(currentlabel);
 
 
         }else if token == "while" {
             let currentoffset = self.assembly.len() - 1;
-            self.whileoffsets.push(currentoffset as i32);
+            self.ifoffsets.push(format!("while{}", currentoffset));
 
-            self.assembly.push_str(&format!("whilestart{:0width$}:\n", currentoffset, width = 10));
+            self.assembly.push_str(&format!("whilestart{}:\n", currentoffset));
+
+        }else if token == "do" {
+            let currentoffset = self.ifoffsets.pop().expect("do block dont do end without if").replace("while", "");
+
             self.assembly.push_str("    pop rax\n");
             self.assembly.push_str("    cmp rax, 1\n");
 
             self.assembly.push_str("    jne ");
 
-            self.assembly.push_str(&format!("whileend{:0width$}\n", currentoffset, width = 10));
+            self.assembly.push_str(&format!("whileend{}\n", currentoffset));
+
+            self.ifoffsets.push(format!("while{}", currentoffset));
  
 
         }else if token == "whileend" {
-            let lastifoffset =  self.whileoffsets.pop().expect("dont do end without if");
+            let lastifoffset =  self.ifoffsets.pop().expect("dont do end without if");
 
             self.assembly.push_str(&format!("    jmp whilestart{:0width$}\n", lastifoffset, width=10));
             self.assembly.push_str(&format!("whileend{:0width$}:\n", lastifoffset, width = 10));
@@ -146,7 +164,6 @@ impl Compiler {
 fn main() {
     let mut compiler = Compiler {
         ifoffsets: Vec::new(),
-        whileoffsets: Vec::new(),
         assembly: String::new(),
     };
 
