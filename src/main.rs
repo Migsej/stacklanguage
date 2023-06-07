@@ -3,7 +3,7 @@ use std::env;
 use std::process::Command;
 
 struct Compiler {
-    ifoffsets: Vec<String>,
+    offsets: Vec<String>,
     assembly: String,
 }
 
@@ -49,7 +49,7 @@ impl Compiler {
         self.assembly.push_str("    syscall\n");
         self.assembly.push_str("    add     rsp, 40\n");
         self.assembly.push_str("    ret\n");
-        self.assembly.push_str("_start:\n");
+        
 
         tokens.for_each(|x| {self.handletoken(x.to_string());});
 
@@ -68,7 +68,10 @@ impl Compiler {
             self.assembly.push_str("    add rax, rbx\n");
             self.assembly.push_str("    push rax\n");
 
-        } else if token == "-" {
+        } else if token == "start" {
+            self.assembly.push_str("_start:\n");
+
+        }else if token == "-" {
             self.assembly.push_str("    pop rbx\n");
             self.assembly.push_str("    pop rax\n");
             self.assembly.push_str("    sub rax, rbx\n");
@@ -104,6 +107,13 @@ impl Compiler {
             self.assembly.push_str("    push rdi\n");
         }else if token == "drp" {
             self.assembly.push_str("    pop rdi\n");
+        }else if token.starts_with("func") {
+            let functionname = token.replace("func[", "").replace("]", "");
+            self.assembly.push_str(&format!("{}:\n", functionname));
+            self.offsets.push(format!("function{}", functionname));
+        }else if token.starts_with("call") {
+            let functionname = token.replace("call[", "").replace("]", "");
+            self.assembly.push_str(&format!("   call {}\n", functionname));
         }else if token == "if" {
             self.assembly.push_str("    pop rax\n");
             self.assembly.push_str("    cmp rax, 1\n");
@@ -114,13 +124,18 @@ impl Compiler {
 
             self.assembly.push_str(&currentlabel);
             self.assembly.push_str("\n");
-            self.ifoffsets.push(currentlabel);
+            self.offsets.push(currentlabel);
         }else if token == "end" {
-            let lastifoffset =  self.ifoffsets.pop().expect("dont do end without if");
+
+            let lastifoffset =  self.offsets.pop().expect("dont do end without if");
             if lastifoffset.starts_with("while") {
                 let lastifoffset = lastifoffset.replace("while", "");
                 self.assembly.push_str(&format!("    jmp whilestart{}\n", lastifoffset));
                 self.assembly.push_str(&format!("whileend{}:\n", lastifoffset));
+            }else if lastifoffset.starts_with("function") {
+
+                let lastifoffset = lastifoffset.replace("function", "");
+                self.assembly.push_str("    ret\n");
             }else{
 
                 self.assembly.push_str(&format!("{}:\n", lastifoffset));
@@ -128,7 +143,7 @@ impl Compiler {
 
 
         }else if token == "else" {
-            let lastifoffset =  self.ifoffsets.pop().expect("dont do end without if");
+            let lastifoffset =  self.offsets.pop().expect("dont do end without if");
 
             self.assembly.push_str("    jmp ");
             let currentoffset = self.assembly.len() - 1;
@@ -138,17 +153,17 @@ impl Compiler {
 
             self.assembly.push_str(&lastifoffset);
             self.assembly.push_str(":\n");
-            self.ifoffsets.push(currentlabel);
+            self.offsets.push(currentlabel);
 
 
         }else if token == "while" {
             let currentoffset = self.assembly.len() - 1;
-            self.ifoffsets.push(format!("while{}", currentoffset));
+            self.offsets.push(format!("while{}", currentoffset));
 
             self.assembly.push_str(&format!("whilestart{}:\n", currentoffset));
 
         }else if token == "do" {
-            let currentoffset = self.ifoffsets.pop().expect("do block dont do end without if").replace("while", "");
+            let currentoffset = self.offsets.pop().expect("do block dont do end without if").replace("while", "");
 
             self.assembly.push_str("    pop rax\n");
             self.assembly.push_str("    cmp rax, 1\n");
@@ -157,11 +172,11 @@ impl Compiler {
 
             self.assembly.push_str(&format!("whileend{}\n", currentoffset));
 
-            self.ifoffsets.push(format!("while{}", currentoffset));
+            self.offsets.push(format!("while{}", currentoffset));
  
 
         }else if token == "whileend" {
-            let lastifoffset =  self.ifoffsets.pop().expect("dont do end without if");
+            let lastifoffset =  self.offsets.pop().expect("dont do end without if");
 
             self.assembly.push_str(&format!("    jmp whilestart{:0width$}\n", lastifoffset, width=10));
             self.assembly.push_str(&format!("whileend{:0width$}:\n", lastifoffset, width = 10));
@@ -174,7 +189,7 @@ impl Compiler {
 }
 fn main() {
     let mut compiler = Compiler {
-        ifoffsets: Vec::new(),
+        offsets: Vec::new(),
         assembly: String::new(),
     };
 

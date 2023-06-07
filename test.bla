@@ -1,2 +1,10 @@
 
+func[hello] 69 . end
+
+start 
+
 1 while 5 < do drp dup .  1 + end
+
+call[hello]
+
+
