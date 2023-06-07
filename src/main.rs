@@ -1,3 +1,5 @@
+mod basic;
+
 use std::fs;
 use std::env;
 use std::process::Command;
@@ -16,40 +18,7 @@ impl Compiler {
         self.assembly.push_str("section .text\n");
         self.assembly.push_str("global _start\n");
         self.assembly.push_str("\n");
-        self.assembly.push_str("dump:\n");
-        self.assembly.push_str("    mov     r9, -3689348814741910323\n");
-        self.assembly.push_str("    sub     rsp, 40\n");
-        self.assembly.push_str("    mov     BYTE [rsp+31], 10\n");
-        self.assembly.push_str("    lea     rcx, [rsp+30]\n");
-        self.assembly.push_str(".L2:\n");
-        self.assembly.push_str("    mov     rax, rdi\n");
-        self.assembly.push_str("    lea     r8, [rsp+32]\n");
-        self.assembly.push_str("    mul     r9\n");
-        self.assembly.push_str("    mov     rax, rdi\n");
-        self.assembly.push_str("    sub     r8, rcx\n");
-        self.assembly.push_str("    shr     rdx, 3\n");
-        self.assembly.push_str("    lea     rsi, [rdx+rdx*4]\n");
-        self.assembly.push_str("    add     rsi, rsi\n");
-        self.assembly.push_str("    sub     rax, rsi\n");
-        self.assembly.push_str("    add     eax, 48\n");
-        self.assembly.push_str("    mov     BYTE [rcx], al\n");
-        self.assembly.push_str("    mov     rax, rdi\n");
-        self.assembly.push_str("    mov     rdi, rdx\n");
-        self.assembly.push_str("    mov     rdx, rcx\n");
-        self.assembly.push_str("    sub     rcx, 1\n");
-        self.assembly.push_str("    cmp     rax, 9\n");
-        self.assembly.push_str("    ja      .L2\n");
-        self.assembly.push_str("    lea     rax, [rsp+32]\n");
-        self.assembly.push_str("    mov     edi, 1\n");
-        self.assembly.push_str("    sub     rdx, rax\n");
-        self.assembly.push_str("    xor     eax, eax\n");
-        self.assembly.push_str("    lea     rsi, [rsp+32+rdx]\n");
-        self.assembly.push_str("    mov     rdx, r8\n");
-        self.assembly.push_str("    mov     rax, 1\n");
-        self.assembly.push_str("    syscall\n");
-        self.assembly.push_str("    add     rsp, 40\n");
-        self.assembly.push_str("    ret\n");
-        
+        self.assembly.push_str(&basic::dump()); 
 
         tokens.for_each(|x| {self.handletoken(x.to_string());});
 
@@ -63,48 +32,25 @@ impl Compiler {
 
 
         if token == "+" {
-            self.assembly.push_str("    pop rax\n");
-            self.assembly.push_str("    pop rbx\n");
-            self.assembly.push_str("    add rax, rbx\n");
-            self.assembly.push_str("    push rax\n");
+            self.assembly.push_str(&basic::plus());
 
         } else if token == "start" {
             self.assembly.push_str("_start:\n");
 
         }else if token == "-" {
-            self.assembly.push_str("    pop rbx\n");
-            self.assembly.push_str("    pop rax\n");
-            self.assembly.push_str("    sub rax, rbx\n");
-            self.assembly.push_str("    push rax\n");
+            self.assembly.push_str(&basic::minus());
 
         } else if token == "=" {
-            self.assembly.push_str("    pop rax\n");
-            self.assembly.push_str("    pop rbx\n");
-            self.assembly.push_str("    mov rdi, 1\n");
-            self.assembly.push_str("    mov rcx, 0\n");
-            self.assembly.push_str("    cmp rax, rbx\n");
-            self.assembly.push_str("    cmove rcx, rdi\n");
-            self.assembly.push_str("    push rcx\n");
+            self.assembly.push_str(&basic::equal());
         } else if token == "<" {
-            self.assembly.push_str("    mov rbx, [rsp]\n");
-            self.assembly.push_str("    mov rax, [rsp+8]\n");
-            self.assembly.push_str("    mov rdi, 1\n");
-            self.assembly.push_str("    mov rcx, 0\n");
-            self.assembly.push_str("    cmp rax, rbx\n");
-            self.assembly.push_str("    cmovl rcx, rdi\n");
-            self.assembly.push_str("    push rcx\n");
+            self.assembly.push_str(&basic::lessthan());
         }else if token == "." {
             self.assembly.push_str("    pop rdi\n");
             self.assembly.push_str("    call dump\n");
         } else if token == "swp" {
-            self.assembly.push_str("    pop rdi\n");
-            self.assembly.push_str("    pop rax\n");
-            self.assembly.push_str("    push rdi\n");
-            self.assembly.push_str("    push rax\n");
+            self.assembly.push_str(&basic::swap());
         }else if token == "dup" {
-            self.assembly.push_str("    pop rdi\n");
-            self.assembly.push_str("    push rdi\n");
-            self.assembly.push_str("    push rdi\n");
+            self.assembly.push_str(&basic::dup());
         }else if token == "drp" {
             self.assembly.push_str("    pop rdi\n");
         }else if token.starts_with("func") {
