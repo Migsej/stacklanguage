@@ -83,8 +83,8 @@ impl Compiler {
             self.assembly.push_str("    cmove rcx, rdi\n");
             self.assembly.push_str("    push rcx\n");
         } else if token == "<" {
-            self.assembly.push_str("    pop rbx\n");
-            self.assembly.push_str("    pop rax\n");
+            self.assembly.push_str("    mov rbx, [rsp]\n");
+            self.assembly.push_str("    mov rax, [rsp+8]\n");
             self.assembly.push_str("    mov rdi, 1\n");
             self.assembly.push_str("    mov rcx, 0\n");
             self.assembly.push_str("    cmp rax, rbx\n");
@@ -93,7 +93,18 @@ impl Compiler {
         }else if token == "." {
             self.assembly.push_str("    pop rdi\n");
             self.assembly.push_str("    call dump\n");
-        } else if token == "if" {
+        } else if token == "swp" {
+            self.assembly.push_str("    pop rdi\n");
+            self.assembly.push_str("    pop rax\n");
+            self.assembly.push_str("    push rdi\n");
+            self.assembly.push_str("    push rax\n");
+        }else if token == "dup" {
+            self.assembly.push_str("    pop rdi\n");
+            self.assembly.push_str("    push rdi\n");
+            self.assembly.push_str("    push rdi\n");
+        }else if token == "drp" {
+            self.assembly.push_str("    pop rdi\n");
+        }else if token == "if" {
             self.assembly.push_str("    pop rax\n");
             self.assembly.push_str("    cmp rax, 1\n");
 
