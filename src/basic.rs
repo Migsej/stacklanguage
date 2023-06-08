@@ -38,7 +38,6 @@ pub fn dump() -> String {
     return result;
 
 }
-
 pub fn plus() -> String {
     let mut result = String::new();
     result.push_str("    pop rax\n");
@@ -82,7 +81,19 @@ pub fn lessthan() -> String {
 
     return result;
 }
+pub fn  greaterthan() -> String {
+    let mut result = String::new();
+    result.push_str("    mov rbx, [rsp]\n");
+    result.push_str("    mov rax, [rsp+8]\n");
+    result.push_str("    mov rdi, 1\n");
+    result.push_str("    mov rcx, 0\n");
+    result.push_str("    cmp rax, rbx\n");
+    result.push_str("    cmovg rcx, rdi\n");
+    result.push_str("    push rcx\n");
 
+    return result;
+}
+ 
 pub fn swap() -> String {
     let mut result = String::new();
     result.push_str("    pop rax\n");

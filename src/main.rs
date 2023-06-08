@@ -37,6 +37,12 @@ impl Compiler {
         } else if token == "start" {
             self.assembly.push_str("_start:\n");
 
+        }else if token.starts_with('[') {
+            let mut  token = token.replace('[', "").replace(']', "").parse::<i32>().expect("must be a number");
+            token = token * 8;
+            self.assembly.push_str(&format!("    mov rax, [rsp + {}]\n", token));
+            self.assembly.push_str("    push rax\n");
+
         }else if token == "-" {
             self.assembly.push_str(&basic::minus());
 
@@ -44,6 +50,8 @@ impl Compiler {
             self.assembly.push_str(&basic::equal());
         } else if token == "<" {
             self.assembly.push_str(&basic::lessthan());
+        } else if token == ">" {
+            self.assembly.push_str(&basic::greaterthan());
         }else if token == "." {
             self.assembly.push_str("    pop rdi\n");
             self.assembly.push_str("    call dump\n");
@@ -80,7 +88,6 @@ impl Compiler {
                 self.assembly.push_str(&format!("whileend{}:\n", lastifoffset));
             }else if lastifoffset.starts_with("function") {
 
-                let lastifoffset = lastifoffset.replace("function", "");
                 self.assembly.push_str("    ret\n");
             }else{
 
@@ -143,7 +150,8 @@ fn main() {
     let filename = &args[1];
     let basename = filename.split(".bla").next().unwrap();
 
-    let assembly = compiler.parsefile(filename.to_string());
+    compiler.parsefile(filename.to_string());
+
     fs::write(format!("{}.asm", basename), compiler.assembly).expect("couldnt write assembly");
 
     Command::new("nasm")

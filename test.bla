@@ -1,10 +1,12 @@
 
-func[hello] 69 . end
+func[hello] 0 if 69 . else 420 . end end
 
 start 
 
-1 while 5 < do drp dup .  1 + end
+5  1 while  > do  dup .  1 + end
 
 call[hello]
 
+
+1 2  3 [2] .
 
