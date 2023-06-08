@@ -56,6 +56,15 @@ pub fn minus() -> String {
 
     return result;
 }
+pub fn  multilpy() -> String {
+    let mut result = String::new();
+    result.push_str("    pop rax\n");
+    result.push_str("    pop rbx\n");
+    result.push_str("    mul rbx\n");
+    result.push_str("    push rax\n");
+
+    return result;
+}
 
 pub fn equal() -> String {
     let mut result = String::new();

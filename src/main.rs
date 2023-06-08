@@ -46,6 +46,9 @@ impl Compiler {
         }else if token == "-" {
             self.assembly.push_str(&basic::minus());
 
+        }else if token == "*" {
+            self.assembly.push_str(&basic::multilpy());
+
         } else if token == "=" {
             self.assembly.push_str(&basic::equal());
         } else if token == "<" {
