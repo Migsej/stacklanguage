@@ -66,6 +66,17 @@ pub fn  multilpy() -> String {
     return result;
 }
 
+pub fn divide() -> String {
+    let mut result = String::new();
+    result.push_str("    pop rax\n");
+    result.push_str("    pop rbx\n");
+    result.push_str("    mov rdx, 0\n");
+    result.push_str("    div rbx\n");
+    result.push_str("    push rax\n");
+
+    return result;
+}
+
 pub fn equal() -> String {
     let mut result = String::new();
     result.push_str("    pop rax\n");

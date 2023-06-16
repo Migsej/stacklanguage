@@ -3,6 +3,7 @@ mod basic;
 use std::fs;
 use std::env;
 use std::process::Command;
+use anyhow::Result;
 
 struct Compiler {
     offsets: Vec<String>,
@@ -48,6 +49,9 @@ impl Compiler {
 
         }else if token == "*" {
             self.assembly.push_str(&basic::multilpy());
+
+        }else if token == "/" {
+            self.assembly.push_str(&basic::divide());
 
         } else if token == "=" {
             self.assembly.push_str(&basic::equal());
@@ -131,19 +135,12 @@ impl Compiler {
             self.offsets.push(format!("while{}", currentoffset));
  
 
-        }else if token == "whileend" {
-            let lastifoffset =  self.offsets.pop().expect("dont do end without if");
-
-            self.assembly.push_str(&format!("    jmp whilestart{:0width$}\n", lastifoffset, width=10));
-            self.assembly.push_str(&format!("whileend{:0width$}:\n", lastifoffset, width = 10));
-
-
         }else {
             self.assembly.push_str(&format!("    push {token}\n")); 
         }
     }
 }
-fn main() {
+fn main() -> anyhow::Result<()> {
     let mut compiler = Compiler {
         offsets: Vec::new(),
         assembly: String::new(),
@@ -151,11 +148,11 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
-    let basename = filename.split(".bla").next().unwrap();
+    let basename = filename.split(".bla").next()?;
 
     compiler.parsefile(filename.to_string());
 
-    fs::write(format!("{}.asm", basename), compiler.assembly).expect("couldnt write assembly");
+    fs::write(format!("{}.asm", basename), compiler.assembly)?;
 
     Command::new("nasm")
         .arg("-felf64")
@@ -168,5 +165,5 @@ fn main() {
         .arg(format!("{}.o", basename))
         .status()
         .expect("couldnt run ld");
-
+    Ok(())
 }
