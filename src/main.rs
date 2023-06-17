@@ -3,7 +3,7 @@ mod basic;
 use std::fs;
 use std::env;
 use std::process::Command;
-use anyhow::Result;
+use anyhow::{Result, Context};
 
 struct Compiler {
     offsets: Vec<String>,
@@ -12,7 +12,7 @@ struct Compiler {
 
 impl Compiler {
 
-    fn parsefile(&mut self, file: String) -> &String{
+    fn parsefile(&mut self, file: String) -> Result<&String>{
         let contents = fs::read_to_string(file).expect("couldnt open file");
         let tokens = contents.split_whitespace();
 
@@ -21,15 +21,18 @@ impl Compiler {
         self.assembly.push_str("\n");
         self.assembly.push_str(&basic::dump()); 
 
-        tokens.for_each(|x| {self.handletoken(x.to_string());});
+
+        for ele in tokens {
+            self.handletoken(ele.to_string())?;
+        }
 
         self.assembly.push_str("    mov rax, 60\n");
         self.assembly.push_str("    mov rdi, 0\n");
         self.assembly.push_str("    syscall\n");
 
-        return &self.assembly
+        return Ok(&self.assembly)
     }
-    fn handletoken(&mut self, token: String) {
+    fn handletoken(&mut self, token: String) -> Result<()>{
 
 
         if token == "+" {
@@ -138,19 +141,21 @@ impl Compiler {
         }else {
             self.assembly.push_str(&format!("    push {token}\n")); 
         }
+        Ok(())
     }
 }
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     let mut compiler = Compiler {
         offsets: Vec::new(),
         assembly: String::new(),
     };
 
     let args: Vec<String> = env::args().collect();
+    assert!(args.len() == 2 , "specify a file");
     let filename = &args[1];
-    let basename = filename.split(".bla").next()?;
+    let basename = filename.split(".bla").next().unwrap();
 
-    compiler.parsefile(filename.to_string());
+    compiler.parsefile(filename.to_string())?;
 
     fs::write(format!("{}.asm", basename), compiler.assembly)?;
 
@@ -158,12 +163,12 @@ fn main() -> anyhow::Result<()> {
         .arg("-felf64")
         .arg(format!("./{}.asm", basename))
         .status()
-        .expect("couldnt run nasm");
+        .context("couldnt run nasm")?;
     Command::new("ld")
         .arg("-o")
         .arg(format!("{}", basename))
         .arg(format!("{}.o", basename))
         .status()
-        .expect("couldnt run ld");
+        .context("couldnt run ld")?;
     Ok(())
 }
